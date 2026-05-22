@@ -1,0 +1,12 @@
+node_modules/
+dist/
+data/polymarket.db
+data/polymarket.db-journal
+data/polymarket.db-wal
+data/polymarket.db-shm
+data/reports/*.json
+data/reports/*.md
+.env
+.env.local
+*.log
+.DS_Store
