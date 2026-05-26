@@ -19,9 +19,15 @@ const SearchResponse = z
   })
   .passthrough();
 
+const WALLET_RE = /^0x[0-9a-fA-F]{40}$/;
+
 export async function resolveUsernameToWallet(
   username: string,
 ): Promise<Profile> {
+  if (WALLET_RE.test(username)) {
+    return { username, proxyWallet: username };
+  }
+
   const data = await fetchJson(`${GAMMA_API}/search`, SearchResponse, {
     query: {
       q: username,

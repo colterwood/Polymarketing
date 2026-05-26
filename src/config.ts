@@ -4,6 +4,7 @@ import { z } from "zod";
 const Env = z.object({
   POLYMARKET_USERS: z.string().default("magamyman,whopperlover"),
   DB_PATH: z.string().default("data/polymarket.db"),
+  POLYMARKET_COOKIE: z.string().optional(),
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_FROM_NUMBER: z.string().optional(),
@@ -28,6 +29,7 @@ export const config = {
     .map((u) => u.trim())
     .filter(Boolean),
   dbPath: parsed.DB_PATH,
+  polymarketCookie: parsed.POLYMARKET_COOKIE,
   twilio: {
     sid: parsed.TWILIO_ACCOUNT_SID,
     token: parsed.TWILIO_AUTH_TOKEN,

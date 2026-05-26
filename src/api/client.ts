@@ -53,6 +53,7 @@ export async function fetchJson<T>(
         headers: {
           accept: "application/json",
           ...(opts.body ? { "content-type": "application/json" } : {}),
+          ...(config.polymarketCookie ? { cookie: config.polymarketCookie } : {}),
           ...opts.headers,
         },
         body: opts.body ? JSON.stringify(opts.body) : undefined,
