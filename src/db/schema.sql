@@ -73,3 +73,19 @@ CREATE TABLE IF NOT EXISTS alerts_sent (
   percentile REAL NOT NULL,
   PRIMARY KEY (transaction_hash, user_wallet, asset)
 );
+
+CREATE TABLE IF NOT EXISTS watch_wallet_cache (
+  wallet TEXT PRIMARY KEY,
+  is_new INTEGER NOT NULL,
+  cached_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS watch_market_cache (
+  asset_id TEXT PRIMARY KEY,
+  found INTEGER NOT NULL DEFAULT 1,
+  condition_id TEXT NOT NULL DEFAULT '',
+  slug TEXT NOT NULL DEFAULT '',
+  title TEXT NOT NULL DEFAULT '',
+  is_politics INTEGER NOT NULL DEFAULT 0,
+  cached_at INTEGER NOT NULL
+);

@@ -9,6 +9,7 @@ import type {
   Profile,
   RawActivity,
 } from "../types.js";
+import type { WatchMarketInfo } from "../api/watchMarket.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SCHEMA_PATH = join(here, "schema.sql");
@@ -282,6 +283,96 @@ export function replaceBets(wallet: string, bets: BetRecord[]): void {
     }
   });
   tx(bets);
+}
+
+// --- Watch feature cache ---
+
+const WALLET_CACHE_TTL_NEW = 24 * 3600; // recheck "new" wallets daily
+const WALLET_CACHE_TTL_OLD = 7 * 24 * 3600; // recheck established wallets weekly
+const MARKET_CACHE_TTL = 7 * 24 * 3600; // market categories are stable
+
+export function getCachedWallet(wallet: string): boolean | null {
+  const db = getDb();
+  const now = Math.floor(Date.now() / 1000);
+  const row = db
+    .prepare(
+      `SELECT is_new, cached_at FROM watch_wallet_cache WHERE wallet = ?`,
+    )
+    .get(wallet) as { is_new: number; cached_at: number } | undefined;
+  if (!row) return null;
+  const ttl = row.is_new ? WALLET_CACHE_TTL_NEW : WALLET_CACHE_TTL_OLD;
+  if (now - row.cached_at > ttl) return null;
+  return !!row.is_new;
+}
+
+export function setCachedWallet(wallet: string, isNew: boolean): void {
+  const db = getDb();
+  db.prepare(
+    `INSERT INTO watch_wallet_cache (wallet, is_new, cached_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(wallet) DO UPDATE SET is_new = excluded.is_new, cached_at = excluded.cached_at`,
+  ).run(wallet, isNew ? 1 : 0, Math.floor(Date.now() / 1000));
+}
+
+export interface CachedMarket {
+  found: boolean;
+  info: WatchMarketInfo | null;
+  isPolitics: boolean;
+}
+
+export function getCachedMarket(assetId: string): CachedMarket | null {
+  const db = getDb();
+  const now = Math.floor(Date.now() / 1000);
+  const row = db
+    .prepare(
+      `SELECT found, condition_id, slug, title, is_politics, cached_at
+       FROM watch_market_cache WHERE asset_id = ?`,
+    )
+    .get(assetId) as
+    | {
+        found: number;
+        condition_id: string;
+        slug: string;
+        title: string;
+        is_politics: number;
+        cached_at: number;
+      }
+    | undefined;
+  if (!row) return null;
+  if (now - row.cached_at > MARKET_CACHE_TTL) return null;
+  if (!row.found) return { found: false, info: null, isPolitics: false };
+  return {
+    found: true,
+    info: { conditionId: row.condition_id, slug: row.slug, title: row.title },
+    isPolitics: !!row.is_politics,
+  };
+}
+
+export function setCachedMarket(
+  assetId: string,
+  info: WatchMarketInfo | null,
+  isPolitics: boolean,
+): void {
+  const db = getDb();
+  db.prepare(
+    `INSERT INTO watch_market_cache (asset_id, found, condition_id, slug, title, is_politics, cached_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(asset_id) DO UPDATE SET
+       found = excluded.found,
+       condition_id = excluded.condition_id,
+       slug = excluded.slug,
+       title = excluded.title,
+       is_politics = excluded.is_politics,
+       cached_at = excluded.cached_at`,
+  ).run(
+    assetId,
+    info ? 1 : 0,
+    info?.conditionId ?? "",
+    info?.slug ?? "",
+    info?.title ?? "",
+    isPolitics ? 1 : 0,
+    Math.floor(Date.now() / 1000),
+  );
 }
 
 export function loadBets(wallet: string): BetRecord[] {

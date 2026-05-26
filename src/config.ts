@@ -20,6 +20,11 @@ const Env = z.object({
   LOG_LEVEL: z
     .enum(["trace", "debug", "info", "warn", "error"])
     .default("info"),
+  POLYGON_WS_URL: z
+    .string()
+    .default("wss://polygon-bor-rpc.publicnode.com"),
+  WATCH_MIN_USDC: z.coerce.number().positive().default(1000),
+  WATCH_NEW_ACCOUNT_MAX_TRADES: z.coerce.number().int().positive().default(20),
 });
 
 const parsed = Env.parse(process.env);
@@ -44,6 +49,9 @@ export const config = {
   },
   dryRun: parsed.DRY_RUN,
   logLevel: parsed.LOG_LEVEL,
+  polygonWsUrl: parsed.POLYGON_WS_URL,
+  watchMinUsdc: parsed.WATCH_MIN_USDC,
+  watchNewAccountMaxTrades: parsed.WATCH_NEW_ACCOUNT_MAX_TRADES,
 } as const;
 
 export const GAMMA_API = "https://gamma-api.polymarket.com";
