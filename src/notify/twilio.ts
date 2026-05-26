@@ -14,13 +14,17 @@ export interface AlertPayload {
 
 function formatBody(p: AlertPayload): string {
   const pct = (p.percentile * 100).toFixed(1);
-  const amt = `$${p.amountUsdc.toFixed(2)}`;
+  const amt = `$${p.amountUsdc.toFixed(0)}`;
   const wr =
     p.bucketWinRate !== null
-      ? `${(p.bucketWinRate * 100).toFixed(0)}% hist win rate`
-      : "no historical win rate";
+      ? `${(p.bucketWinRate * 100).toFixed(0)}% win rate`
+      : "";
   const tier = p.bucketLabel ? ` (${p.bucketLabel})` : "";
-  return `${p.username} bet ${amt} on "${p.marketTitle}" — ${pct}th percentile size${tier}, ${wr}. ${MARKET_URL(p.slug)}`;
+  // Truncate slug to first hyphen-separated segment to keep URL short
+  const shortSlug = p.slug.split("-").slice(0, 6).join("-");
+  const url = MARKET_URL(shortSlug);
+  const parts = [`${p.username}: ${amt} on "${p.marketTitle}"`, `${pct}th pct${tier}${wr ? `, ${wr}` : ""}`, url];
+  return parts.join(" | ");
 }
 
 export async function sendAlert(payload: AlertPayload): Promise<void> {
