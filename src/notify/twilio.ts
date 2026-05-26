@@ -10,6 +10,7 @@ export interface AlertPayload {
   bucketLabel: string | null;
   bucketWinRate: number | null;
   slug: string;
+  body?: string; // override the generated message body
 }
 
 function formatBody(p: AlertPayload): string {
@@ -19,7 +20,7 @@ function formatBody(p: AlertPayload): string {
 }
 
 export async function sendAlert(payload: AlertPayload): Promise<void> {
-  const body = formatBody(payload);
+  const body = payload.body ?? formatBody(payload);
 
   if (config.dryRun) {
     logger.info({ payload, body }, "[DRY_RUN] would send SMS");
